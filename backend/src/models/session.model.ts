@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, BeforeInsert } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, BeforeInsert, JoinColumn } from "typeorm";
 import { User } from "./user.model";
 import { thirtyDaysFromNow } from "../utils/date";
 
@@ -8,7 +8,8 @@ export class Session {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @ManyToOne(() => User, (user) => user.id, { onDelete: "CASCADE" })
+    @ManyToOne(() => User, user => user.sessions, { onDelete: "CASCADE" })
+    @JoinColumn({ name: "user_id" })
     user!: User;
 
     @Column({ name: "user_agent", nullable: true })

@@ -1,5 +1,6 @@
-import { sessionRepo, userRepo } from "../config/postgres";
 import { CREATED, OK, UNAUTHORIZED } from "../constants/http";
+import { deleteSession } from "../repositories/session.repo";
+import { find } from "../repositories/user.repo";
 import { createAccount, loginUser } from "../services/auth.service";
 import appAssert from "../utils/appAssert";
 import catchErrors from "../utils/catchErrors";
@@ -44,7 +45,7 @@ export const logoutHandler = catchErrors(async (req, res) => {
     const { payload } = verifyToken(accessToken);
 
     if (payload) {
-        await sessionRepo.delete(payload.sessionId);
+        await deleteSession(payload.sessionId);
     }
 
     return clearAuthCookies(res)
@@ -56,7 +57,7 @@ export const logoutHandler = catchErrors(async (req, res) => {
 
 // for debug
 export const getUsersHandler = catchErrors(async (req, res) => {
-    const users = await userRepo.find();
+    const users = await find();
     appAssert(users, UNAUTHORIZED, "No users found");
     return res.json(users);
 });

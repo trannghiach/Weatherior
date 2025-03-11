@@ -12,6 +12,7 @@ export const PORT = getEnv('PORT', '1205');
 export const WEB_URL = getEnv('WEB_URL');
 export const JWT_SECRET = getEnv('JWT_SECRET');
 export const JWT_REFRESH_SECRET = getEnv('JWT_REFRESH_SECRET');
-export const MONGO_URI = getEnv('MONGO_URI');
+export const REDIS_HOST = getEnv('REDIS_HOST');
+export const REDIS_PORT = getEnv('REDIS_PORT');
 export const POSTGRES_URI = getEnv('POSTGRES_URI');
 

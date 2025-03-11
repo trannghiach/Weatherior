@@ -1,6 +1,9 @@
 
 import { compareValue, hashValue } from "../utils/bcrypt";
-import { BeforeInsert, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Session } from "./session.model";
+import { Match } from "./match.model";
+import { Ranking } from "./ranking.model";
 
 
 @Entity("users")
@@ -22,6 +25,15 @@ export class User {
 
     @UpdateDateColumn({ name: "updated_at" })
     updatedAt!: Date;
+
+    @OneToMany(() => Session, session => session.user)
+    sessions!: Session[];
+
+    @OneToMany(() => Match, match => match.playerOne || match.playerTwo)
+    matches!: Match[];
+
+    @OneToMany(() => Ranking, ranking => ranking.user)
+    rankings!: Ranking[];
 
     @BeforeInsert()
     async hashPassword() {
