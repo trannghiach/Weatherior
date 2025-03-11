@@ -1,11 +1,11 @@
 # Weatherior
 
-## Multiplayer Card Battle Game
+## Multiplayer Card Battle Game (with OpenWeather API)
 
 ### Overview
 This is a **real-time card battle game**, where two players can:
 - **Register & Login** (with enhanced security)
-- **Compete in online PvP matches** with turn-based mechanics
+- **Compete in online PvP matches** with TFT-inspired mechanics
 - **Rank up** through a competitive ranking system
 - **Chat in-game** with opponents
 - **Use a gacha system** to obtain random cards
@@ -18,7 +18,7 @@ This is a **real-time card battle game**, where two players can:
 - ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white) - Game server runtime
 - ![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white) - API framework
 - ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) - Safer and maintainable code
-- ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white) - Real-time multiplayer communication
+- ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white) - Real-time multiplayer communication (duel battle & chat)
 
 #### Frontend
 - ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) - Game UI
@@ -45,12 +45,13 @@ This is a **real-time card battle game**, where two players can:
 #### **PostgreSQL** (Relational)
 - **Users**: Stores user account information
 - **Rankings**: Stores player rankings
+- **ACID** for Rankings & Transactions
 
 #### **MongoDB** (NoSQL)
 - **Matches**: Stores match history
 - **Chat Logs**: Stores in-game chat messages
 - **Cards**: Stores card collection data
-
+- Fast, Flexible and JSON-based **data-transfer**
 ---
 
 ### Why This Tech Stack?
