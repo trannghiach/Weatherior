@@ -23,7 +23,9 @@ This is a **real-time card battle game**, where two players can:
 #### Frontend
 - ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) - Game UI
 - ![Redux](https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux&logoColor=white) - State management
-- ![Redux-Saga](https://img.shields.io/badge/Redux--Saga-999999?style=for-the-badge&logo=redux-saga&logoColor=white) - Managing async effects like API calls & WebSockets
+- ![Redux-Saga](https://img.shields.io/badge/Redux--Saga-999999?style=for-the-badge&logo=redux-saga&logoColor=white) - Used for managing critical async actions (authentication, match-making, game state updates).
+- ![React Query](https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white) - Used for fetching & caching read-heavy data (card collection, ranking system, match history).
+- ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) - CSS libaries.
 
 #### Database
 - ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) - Storing user data, accounts, rankings
