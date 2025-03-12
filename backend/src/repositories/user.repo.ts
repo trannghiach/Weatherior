@@ -3,9 +3,10 @@ import { User } from "../models/user.model";
 
 const userRepo = PostgresDataSource.getRepository(User);
 
-export const createUser = async (email: string, password: string) => {
+export const createUser = async (email: string, playerName: string, password: string) => {
   const user = new User();
   user.email = email;
+  user.playerName = playerName;
   user.password = password;
   return await userRepo.save(user);
 };

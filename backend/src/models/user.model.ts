@@ -15,6 +15,9 @@ export class User {
     email!: string;
 
     @Column()
+    playerName!: string;
+
+    @Column()
     password!: string;
 
     @Column({ default: false })

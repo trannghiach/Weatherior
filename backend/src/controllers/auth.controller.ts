@@ -1,7 +1,7 @@
 import { CREATED, OK, UNAUTHORIZED } from "../constants/http";
 import { deleteSession } from "../repositories/session.repo";
 import { find } from "../repositories/user.repo";
-import { createAccount, loginUser } from "../services/auth.service";
+import { createAccount, loginUser, refreshUserAccessToken } from "../services/auth.service";
 import appAssert from "../utils/appAssert";
 import catchErrors from "../utils/catchErrors";
 import { clearAuthCookies, setAuthCookies } from "../utils/cookies";
@@ -18,7 +18,7 @@ export const registerHandler = catchErrors(async (req, res) => {
 
     return setAuthCookies({ res, refreshToken, accessToken })
         .status(CREATED)
-        .json(user);
+        .json({ user });
 });
 
 
@@ -32,7 +32,7 @@ export const loginHandler = catchErrors(async (req, res) => {
 
     return setAuthCookies({ res, refreshToken, accessToken })
         .status(OK)
-        .json(user)
+        .json({ user })
 });
 
 
@@ -52,6 +52,19 @@ export const logoutHandler = catchErrors(async (req, res) => {
             message: "Logged out!",
         });
 });
+
+export const refreshHandler = catchErrors(async (req, res) => {
+    const refreshToken = req.cookies.refreshToken as string | undefined;
+    appAssert(refreshToken, UNAUTHORIZED, "Missing Refresh Token");
+
+    const { accessToken, newRefreshToken } = await refreshUserAccessToken(refreshToken);
+
+    return setAuthCookies({ res, refreshToken: newRefreshToken, accessToken })
+        .status(OK)
+        .json({
+            message: "Access Token Refreshed!",
+        });
+    });
 
 // for debug
 export const getUsersHandler = catchErrors(async (req, res) => {

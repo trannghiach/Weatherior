@@ -4,6 +4,8 @@ export const emailSchema = z.string().email().min(1).max(255);
 
 export const passwordSchema = z.string().min(8).max(255);
 
+export const playerNameSchema = z.string().min(1).max(255);
+
 export const loginSchema = z.object({
     email: emailSchema,
     password: passwordSchema,
@@ -12,6 +14,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = loginSchema
     .extend({
+        playerName: playerNameSchema,
         confirmPassword: passwordSchema,
     })
     .refine(data => data.password === data.confirmPassword, {

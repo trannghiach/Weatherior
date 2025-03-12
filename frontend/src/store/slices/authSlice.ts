@@ -23,7 +23,8 @@ interface Credentials {
 }
 
 interface RegisterCredentials extends Credentials {
-    name: string;
+    confirmPassword: string;
+    playerName: string;
 }
 
 export const login = createAsyncThunk<User, Credentials, { rejectValue: string }>(
@@ -64,6 +65,21 @@ export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
         } catch (error) {
             if (error instanceof AxiosError) {
                 return rejectWithValue(error.response?.data.message || "Logout failed");
+            }
+            return rejectWithValue("An unexpected error occurred");
+        }
+    }
+);
+
+export const getUser = createAsyncThunk<User, void, { rejectValue: string }>(
+    '/user',
+    async (_, { rejectWithValue }) => {
+        try {
+            const { data } = await authApi.get<User>('/user');
+            return data.user;
+        } catch (error) {
+            if (error instanceof AxiosError) {
+                return rejectWithValue(error.response?.data.message || "Session expired");
             }
             return rejectWithValue("An unexpected error occurred");
         }

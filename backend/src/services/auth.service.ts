@@ -1,10 +1,10 @@
 import { CONFLICT, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from "../constants/http";
-import { createSession } from "../repositories/session.repo";
+import { createSession, findSessionById, updateSessionTime } from '../repositories/session.repo';
 import { createUser, findUserByEmail } from "../repositories/user.repo";
 
 import appAssert from "../utils/appAssert";
-import { RefreshTokenSignOptions, signToken } from '../utils/jwt';
-
+import { ONE_DAY_IN_MILISECONDS } from "../utils/date";
+import { RefreshTokenPayload, RefreshTokenSignOptions, signToken, verifyToken } from '../utils/jwt';
 
 export type AuthParams = {
     email: string;
@@ -12,11 +12,11 @@ export type AuthParams = {
     userAgent?: string;
 };
 
-export const createAccount = async ({ email, password, userAgent }: AuthParams) => {
+export const createAccount = async ({ email, playerName, password, userAgent }: AuthParams & { playerName: string }) => {
     const existingUser = await findUserByEmail(email);
     appAssert(!existingUser, CONFLICT, "User already exists");
 
-    const user = await createUser(email, password);
+    const user = await createUser(email, playerName, password);
     appAssert(user, INTERNAL_SERVER_ERROR, "Failed to create user");
 
     const session = await createSession(user, userAgent);
@@ -59,3 +59,40 @@ export const loginUser = async ({ email, password, userAgent }: AuthParams) => {
         refreshToken,
     }
 };
+
+
+export const refreshUserAccessToken = async (refreshToken: string) => {
+    const { payload } = verifyToken<RefreshTokenPayload>(refreshToken, {
+        secret: RefreshTokenSignOptions.secret,
+    });
+
+    appAssert(payload, UNAUTHORIZED, "Invalid refresh token");
+
+    const session = await findSessionById(payload.sessionId);
+    
+    const now = Date.now();
+    appAssert(
+        session && session.expiresAt.getTime() > now, 
+        UNAUTHORIZED, 
+        "Session expired"
+    );
+
+    const sessionNeedsRefresh = session.expiresAt.getTime() - now <= ONE_DAY_IN_MILISECONDS;
+
+    if (sessionNeedsRefresh) {
+        await updateSessionTime(session.id);
+    }
+
+    const accessToken = signToken({
+        sessionId: session.id,
+        userId: session.user.id,
+    });
+
+    const newRefreshToken = signToken({ sessionId: session.id }, RefreshTokenSignOptions);
+
+    return {
+        accessToken,
+        newRefreshToken,
+    };
+
+}
