@@ -1,17 +1,21 @@
-import { useSelector } from "react-redux"
+
 import { Navigate, Outlet } from "react-router-dom"
-import { RootState } from "../store";
+import useAuth from "../hooks/useAuth"
 
 const AppContainer = () => {
-  const { user, loading, error } = useSelector((state: RootState) => state.auth);
+  const { user, isLoading } = useAuth()
   return (
     <>
-        {loading && <div>Loading...</div>}
-        {error && <div>{error}</div>}
-        {!user ? <Navigate to="/login" replace state={{ redirectUrl: window.location.pathname }} />
-         : (
-          <Outlet />
-         )}
+        {isLoading ? (
+            <div>Loading...</div>
+        ) : user ? (
+            <Outlet />
+        ) : (
+            <Navigate 
+              to="/login"
+              replace
+              state={{ redirectUrl: window.location.pathname }} />
+        )}
     </>
   )
 }

@@ -7,8 +7,22 @@ import redisClient from "./config/redis";
 import errorHandler from "./middleware/errorHandler";
 import authRoutes from "./routes/auth.route";
 import cookieParser from "cookie-parser";
+import authenticate from "./middleware/authenticate";
+import userRoutes from "./routes/user.route";
+import { createServer  } from "http";
+import setupSocketIO from "./config/socketio";
 
 const app = express();
+
+const httpServer = createServer(app);
+
+try {
+  setupSocketIO(httpServer);
+  console.log("Socket.IO setup completed");
+} catch (error) {
+  console.error("Failed to setup Socket.IO:", error);
+  process.exit(1);
+}
 
 app.use(
   cors({
@@ -27,6 +41,8 @@ app.get("/", (_, res) => {
 
 app.use("/auth", authRoutes);
 
+app.use("/user", authenticate, userRoutes);
+
 app.use(errorHandler);
 
 redisClient.on("connect", async () => {
@@ -34,7 +50,7 @@ redisClient.on("connect", async () => {
 
     await connectToPostgres();
 
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
         console.log(`Backend server is running on Port:${PORT}`);
     });
 });

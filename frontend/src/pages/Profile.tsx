@@ -1,14 +1,28 @@
-import { useUserProfile } from "../hooks/useUserData";
+import { Link } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
+
 
 const Profile: React.FC = () => {
-  const { data: user } = useUserProfile();
+  const { user } = useAuth();
+
+  console.log("User Data:", user); // Kiểm tra dữ liệu user
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
+  const { email, verified, createdAt, playerName } = user;
   return (
     <>
-      <div className="flex flex-col justify-center items-center">
+      <div className="min-h-screen flex flex-col justify-center items-center">
         <h1>Profile Page</h1>
-        <h2>{user?.username}</h2>
-        <h2>{user?.email}</h2>
-        <h2>{user?.verified}</h2>
+        <h2>{playerName}</h2>
+        <h2>{email}</h2>
+        <h2>{verified}</h2>
+        <h2>{createdAt}</h2>
+        <Link to="/match"
+            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >Go to Match</Link>
       </div>
     </>
   );

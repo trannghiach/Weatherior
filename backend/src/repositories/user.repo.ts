@@ -15,6 +15,11 @@ export const findUserByEmail = async (email: string) => {
   return await userRepo.findOne({ where: { email } });
 };
 
+export const findUserById = async (id: string) => {
+  const user = await userRepo.findOne({ where: { id } });
+  return user;
+}
+
 // for debug
 export const find = async () => {
   return await userRepo.find();

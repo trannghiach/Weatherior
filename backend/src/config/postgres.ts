@@ -11,7 +11,7 @@ export const PostgresDataSource = new DataSource({
     url: POSTGRES_URI,
     entities: [User, Session, Match, Ranking],
     synchronize: NODE_ENV === "development",
-    logging: NODE_ENV === "development",
+    logging: false,
     extra: {
         ssl: NODE_ENV === "production" ? { rejectUnauthorized: false } : false
     }

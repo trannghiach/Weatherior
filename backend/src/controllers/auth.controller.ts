@@ -18,7 +18,7 @@ export const registerHandler = catchErrors(async (req, res) => {
 
     return setAuthCookies({ res, refreshToken, accessToken })
         .status(CREATED)
-        .json({ user });
+        .json(user);
 });
 
 
@@ -32,7 +32,7 @@ export const loginHandler = catchErrors(async (req, res) => {
 
     return setAuthCookies({ res, refreshToken, accessToken })
         .status(OK)
-        .json({ user })
+        .json(user);
 });
 
 
@@ -65,11 +65,4 @@ export const refreshHandler = catchErrors(async (req, res) => {
             message: "Access Token Refreshed!",
         });
     });
-
-// for debug
-export const getUsersHandler = catchErrors(async (req, res) => {
-    const users = await find();
-    appAssert(users, UNAUTHORIZED, "No users found");
-    return res.json(users);
-});
 

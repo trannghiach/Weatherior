@@ -30,7 +30,7 @@ export const createAccount = async ({ email, playerName, password, userAgent }: 
     });
 
     return {
-        user,
+        user: user.omitPassword(),
         accessToken,
         refreshToken,
     }
