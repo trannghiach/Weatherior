@@ -22,14 +22,15 @@ This is a **real-time card battle game**, where two players can:
 
 #### Frontend
 - ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) - Game UI
-- ![Redux](https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux&logoColor=white) - State management
-- ![Redux-Saga](https://img.shields.io/badge/Redux--Saga-999999?style=for-the-badge&logo=redux-saga&logoColor=white) - Used for managing critical async actions (authentication, match-making, game state updates).
-- ![React Query](https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white) - Used for fetching & caching read-heavy data (card collection, ranking system, match history).
+- ![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-764ABC?style=for-the-badge&logo=Redux&logoColor=white) - Used for managing critical async actions (match-making, game state updates).
+- ![Axios Interceptors](https://img.shields.io/badge/Axios%20Interceptors-5A29E4?style=for-the-badge&logo=axios&logoColor=white) - Used for auto send refresh requests at background.
+- ![React Query](https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white) - Used for fetching (authentication) & caching read-heavy data (card collection, ranking system, match history).
 - ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) - CSS libaries.
+- ![OpenWeather API](https://img.shields.io/badge/OpenWeatherAPI-FF7300?style=for-the-badge&logo=openweathermap&logoColor=white) - For the core concepts of this project.
 
 #### Database
 - ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) - Storing user data, accounts, rankings
-- ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white) - Storing match history, logs, chat messages
+- ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white) - Storing match history, logs, chat messages temporarily
 
 #### Authentication & Security
 - ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white) - Token-based authentication
@@ -49,16 +50,19 @@ This is a **real-time card battle game**, where two players can:
 - **Rankings**: Stores player rankings
 - **ACID** for Rankings & Transactions
 
-#### **MongoDB** (NoSQL)
+#### **PostgreSQL** (NoSQL)
+- **Cards**: Stores card collection data
+- Flexible, Agile for the format of the cards
+
+#### **Redis** 
 - **Matches**: Stores match history
 - **Chat Logs**: Stores in-game chat messages
-- **Cards**: Stores card collection data
-- Fast, Flexible and JSON-based **data-transfer**
----
+
+- Fast and Self-destructive after each match
 
 ### Why This Tech Stack?
-- **Redux-Saga** efficiently handles side effects (API calls, WebSocket events)
-- **Hybrid PostgreSQL + MongoDB architecture** optimizes data queries
+- **Redux-Toolkit** efficiently handles side effects (API calls, WebSocket events)
+- **Hybrid PostgreSQL + MongoDB architecture + Redis** optimizes data queries, and storage usage
 - **Docker + Kubernetes** ensures scalability and smooth deployment
 - **Socket.io** provides real-time gameplay responsiveness
 
