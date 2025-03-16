@@ -20,9 +20,9 @@ const Profile: React.FC = () => {
         <h2>{email}</h2>
         <h2>{verified}</h2>
         <h2>{createdAt}</h2>
-        <Link to="/match"
+        <Link to="/sandbox"
             className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >Go to Match</Link>
+        >Sandbox</Link>
       </div>
     </>
   );

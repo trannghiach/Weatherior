@@ -4,6 +4,7 @@ import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { setNavigate } from "./lib/navigate";
+import Sandbox from "./pages/Sandbox";
 
 function App() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<AppContainer />}>
           <Route index element={<Profile />} />
+          <Route path="/sandbox" element={<Sandbox />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
