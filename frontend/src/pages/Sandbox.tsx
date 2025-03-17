@@ -3,10 +3,9 @@ import { RootState } from "../store";
 import { useDispatch, useSelector } from "react-redux"
 import { io, Socket } from "socket.io-client";
 import { setConnected, setSocket } from "../store/slices/socketSlice";
-import { addBattleResult, setCurrentRound, setMatchInfo, setOpponentDisconnected, setOpponentState, setPlayerState, setTimeLeft } from "../store/slices/gameSlice";
+import { addBattleResult, setArrangeCount, setBeingChallenged, setCurrentRound, setMatchInfo, setOpponentCards, setOpponentDisconnected, setPhase, setPlayerCards, setTimeLeft } from "../store/slices/gameSlice";
 import Match from "../components/Match";
 import { v4 as uuidv4 } from "uuid";
-import { MatchInfo, PlayerState } from "../types/types";
 
 const initialCards = [
   { id: uuidv4(), name: "hinona", power: 12 },
@@ -28,28 +27,49 @@ const Sandbox: React.FC = () => {
     newSocket.on("connect", () => {
       dispatch(setConnected(true));
       console.log("Connected to Socket server");
-      newSocket.emit("join_match", { playerId: newSocket.id, initialCards });
+      newSocket.emit("join_match", { initialCards });
     });
 
-    newSocket.on("match_started", (data: { matchInfo: MatchInfo, playerState: PlayerState, opponentState: PlayerState }) => {
+    newSocket.on("match_started", (data: any) => {
       dispatch(setMatchInfo(data.matchInfo));
-      dispatch(setPlayerState(data.playerState));
-      dispatch(setOpponentState(data.opponentState));
+      dispatch(setPlayerCards(data.playerCards));
+      dispatch(setOpponentCards(data.opponentCards));
+      dispatch(setCurrentRound(data.currentRound));
     });
 
-    newSocket.on("round_started", (data: { matchId: string, round: number, timeLeft: number}) => {
+    newSocket.on("arrange_phase_started", (data: any) => {
       dispatch(setCurrentRound(data.round));
       dispatch(setTimeLeft(data.timeLeft));
+      dispatch(setPhase(data.phase));
+      dispatch(setArrangeCount(data.arrangeCount));
     });
 
-    newSocket.on("round_ended", (data: { matchId: string, round: number, playerState: Record<string, any> }) => {
-      const playerId = newSocket.id;
-      if(!playerId) {
-        console.log("Player ID not found");
-        return;
-      }
-      dispatch(setPlayerState(data.playerState[playerId]));
+    newSocket.on("challenge_phase_started", (data: any) => {
+      dispatch(setCurrentRound(data.round));
+      dispatch(setTimeLeft(data.timeLeft));
+      dispatch(setPhase(data.phase));
     });
+
+    newSocket.on("opponent_arranged", (data: any) => {
+      dispatch(setOpponentCards(data.opponentCards));
+    });
+
+    newSocket.on("challenge_received", () => {
+      dispatch(setBeingChallenged(true));
+    });
+
+    newSocket.on("battle_started", (data: any) => {
+      dispatch(setPhase(data.phase));
+    });
+
+    // newSocket.on("round_ended", (data: { matchId: string, round: number, playerState: Record<string, any> }) => {
+    //   const playerId = newSocket.id;
+    //   if(!playerId) {
+    //     console.log("Player ID not found");
+    //     return;
+    //   }
+    //   dispatch(setPlayerState(data.playerState[playerId]));
+    // });
 
     newSocket.on("battle_result", (data: any) => {
       dispatch(addBattleResult(data));

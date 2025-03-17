@@ -1,489 +1,76 @@
-import {
-  compareCards,
-  log,
-  validateMatchState,
-  validatePlayerState,
-  withRetry,
-} from "./init";
+import { log, withRetry, validateMatchState } from "./init";
 import redisClient from "./redis";
 
-export async function startRound(matchId: string, io: any) {
-  const startTime = Date.now();
+export async function startArrangePhase(matchId: string, io: any) {
   try {
-    log("DEBUG", `Starting round`, { matchId }, startTime);
-    const matchData = await withRetry(
-      () => validateMatchState(matchId, "playing", true, "none"),
-      3,
-      100
-    );
-    const currentRound = parseInt(matchData.currentRound || "0") + 1;
-    const roundStartTime = Date.now();
-    const roundEndTime = roundStartTime + 15 * 1000;
-    const timeBucket = Math.floor(roundStartTime / (60 * 1000));
-
-    log(
-      "TRACE",
-      `Scheduling round`,
-      { matchId, currentRound, roundStartTime, roundEndTime, timeBucket },
-      startTime
-    );
-    const result = await withRetry(
-      () =>
-        (redisClient as any).addSchedule(
-          `match:${matchId}`,
-          `schedules:${matchId}:${timeBucket}`,
-          matchId,
-          "round",
-          roundEndTime.toString(),
-          "none",
-          "",
-          currentRound.toString(),
-          roundStartTime.toString()
-        ),
-      3,
-      100
-    );
-    const resultObject = JSON.parse(result);
-    if (!resultObject.success) {
-      log(
-        "ERROR",
-        `Failed to schedule round`,
-        { matchId, error: resultObject.error, stack: new Error().stack },
-        startTime
-      );
-      throw new Error(resultObject.error);
-    }
-    log(
-      "TRACE",
-      `Round scheduled successfully`,
-      { matchId, currentRound, endTime: roundEndTime, result: resultObject },
-      startTime
-    );
-    io.to(matchId.toString()).emit("round_started", {
-      matchId,
-      round: currentRound,
-      timeLeft: 15,
-    });
-    log(
-      "DEBUG",
-      `Emitted round_started event`,
-      { matchId, round: currentRound },
-      startTime
-    );
+    const matchData = await validateMatchState(redisClient, matchId, "playing");
+    await redisClient.hmset(`match:${matchId}`, "phase", "arrange", "challenger", "", "challengeResponse", "");
+    await redisClient.zadd(`schedules:${matchId}`, (Date.now() + 10 * 1000).toString(), JSON.stringify({ matchId, type: "end_arrange" }));
+    io.to(matchId).emit("arrange_phase_started", { matchId, round: matchData.round, timeLeft: 10, phase: "Arrange", arrangeCount: 1 });
+    log("DEBUG", "Arrange phase started", { matchId, round: matchData.round });
   } catch (error: any) {
-    log(
-      "ERROR",
-      `Failed to start round`,
-      { matchId, error: error.message, stack: error.stack },
-      startTime
-    );
-    io.to(matchId.toString()).emit("error", { message: error.message });
+    log("ERROR", "Error in startArrangePhase", { error: error.message });
+    io.to(matchId).emit("error", { message: error.message });
   }
 }
 
-export async function endRound(matchId: string, io: any) {
-  const startTime = Date.now();
+export async function endArrangePhase(matchId: string, io: any) {
   try {
-    log("DEBUG", `Ending current round`, { matchId }, startTime);
-    const matchData = await withRetry(
-      () => validateMatchState(matchId, "playing"),
-      3,
-      100
-    );
+    const matchData = await validateMatchState(redisClient, matchId, "playing");
+    if (matchData.phase !== "arrange") return;
 
-    if (matchData.challenge === "accepted") {
-      log(
-        "TRACE",
-        `Challenge accepted so skip the round due to active challenge`,
-        { matchId, challenge: matchData.challenge },
-        startTime
-      );
-      return;
-    }
-
-    const player1Id = matchData.player1;
-    const player2Id = matchData.player2;
-
-    const [player1Data, player2Data] = await Promise.all([
-      withRetry(() => validatePlayerState(player1Id, matchId), 3, 100),
-      withRetry(() => validatePlayerState(player2Id, matchId), 3, 100),
-    ]);
-    log(
-      "TRACE",
-      "Validated player states",
-      {
-        player1Id,
-        player2Id,
-        matchId,
-        player1Cards: JSON.parse(player1Data.cards).length,
-        player2Cards: JSON.parse(player2Data.cards).length,
-      },
-      startTime
-    );
-
-    const player1NPC = player1Data.selectedNPC;
-    const player2NPC = player2Data.selectedNPC;
-
-    const battlePromises = [];
-    if (player1NPC) {
-      log(
-        "DEBUG",
-        `Scheduling NPC battle for player1`,
-        { matchId, player1Id, npc: player1NPC },
-        startTime
-      );
-      battlePromises.push(
-        startBattleWithNPC(matchId, player1Id, player1NPC, io)
-      );
-    }
-    if (player2NPC) {
-      log(
-        "DEBUG",
-        `Scheduling NPC battle for player2`,
-        { matchId, player2Id, npc: player2NPC },
-        startTime
-      );
-      battlePromises.push(
-        startBattleWithNPC(matchId, player2Id, player2NPC, io)
-      );
-    }
-    await Promise.all(battlePromises);
-    log(
-      "TRACE",
-      `Completed NPC battles`,
-      { matchId, battleCount: battlePromises.length },
-      startTime
-    );
-
-    const pipeline = redisClient.pipeline();
-    pipeline.hgetall(`playerId:${matchId}:${player1Id}`);
-    pipeline.hgetall(`playerId:${matchId}:${player2Id}`);
-
-    const [[, updatedPlayer1Data], [, updatedPlayer2Data]] = await withRetry(
-      () => pipeline.exec(),
-      3,
-      100
-    );
-    log(
-      "TRACE",
-      "Fetached updated player data with pipeline",
-      { player1Id, player2Id, matchId, commandCount: pipeline.length },
-      startTime
-    );
-
-    await startRound(matchId, io);
+    await redisClient.hset(`match:${matchId}`, "phase", "challenge");
+    await redisClient.zadd(`schedules:${matchId}`, (Date.now() + 10 * 1000).toString(), JSON.stringify({ matchId, type: "end_challenge" }));
+    log("TRACE", "Arrange phase ended", { matchId, round: matchData.round }); 
+    io.to(matchId).emit("challenge_phase_started", { matchId, round: matchData.round, timeLeft: 10, phase: "Challenge" });
+    log("DEBUG", "Challenge phase started", { matchId, round: matchData.round });
   } catch (error: any) {
-    log(
-      "ERROR",
-      `Failed to end round`,
-      { matchId, error: error.message, stack: error.stack },
-      startTime
-    );
-    io.to(matchId.toString()).emit("error", { message: error.message });
+    log("ERROR", "Error in endArrangePhase", { error: error.message });
+    io.to(matchId).emit("error", { message: error.message });
   }
 }
 
-export async function startBattleWithNPC(
-  matchId: string,
-  playerId: string,
-  npcId: string,
-  io: any
-) {
-  const startTime = Date.now();
+export async function endChallengePhase(matchId: string, io: any) {
   try {
-    log(
-      "DEBUG",
-      `Starting battle with NPC`,
-      { matchId, playerId, npcId },
-      startTime
-    );
-    await withRetry(() => validateMatchState(matchId, "playing"), 3, 100);
-    const playerData = await withRetry(
-      () => validatePlayerState(playerId, matchId),
-      3,
-      100
-    );
-    const npcsData = await withRetry(
-      () => redisClient.hgetall(`npc:${matchId}`),
-      3,
-      100
-    );
+    const matchData = await validateMatchState(redisClient, matchId, "playing");
+    if (matchData.phase !== "challenge") return;
 
-    const playerCards = JSON.parse(playerData.cards);
-    const playerSlots = JSON.parse(playerData.slots);
-    const npcCards = JSON.parse(npcsData[npcId]);
+    const challengerId = matchData.challenger;
+    const response = matchData.challengeResponse;
 
-    io.to(playerId).emit("battle_started", {
-      matchId,
-      opponent: npcId,
-      opponentCards: npcCards,
-    });
-    log(
-      "TRACE",
-      `Emitted battle_started event to player`,
-      { playerId, matchId, npcId },
-      startTime
-    );
+    if (!challengerId || response === "refused") {
+      const newRound = (parseInt(matchData.round) + 1).toString();
+      await redisClient.hmset(`match:${matchId}`, "round", newRound, "phase", "arrange", "challenger", "", "challengeResponse", "");
+      io.to(matchId).emit("round_ended", { matchId, round: matchData.round });
+      log("DEBUG", "Round ended, no challenge or refused", { matchId, round: matchData.round });
+      await startArrangePhase(matchId, io);
+    } else if (response === "accepted" || !response) {
+      io.to(matchId).emit("battle_started", { matchId, round: matchData.round, phase: "Battle" });
+      log("DEBUG", "Start battle phase", { matchId, round: matchData.round });
+      const player1Id = matchData.player1Id;
+      const player2Id = matchData.player2Id;
+      const [player1Cards, player2Cards] = await Promise.all([
+        redisClient.hget(`player:${matchId}:${player1Id}`, "cards"),
+        redisClient.hget(`player:${matchId}:${player2Id}`, "cards"),
+      ]);
+      if(!player1Cards || !player2Cards) throw new Error("Player cards not found");
+      const p1Cards = JSON.parse(player1Cards);
+      const p2Cards = JSON.parse(player2Cards);
 
-    const battleResults = [];
-    for (let slot = 0; slot < 5; slot++) {
-      const slotStartTime = Date.now();
-      if (playerSlots[slot].disabledTurns > 0) {
-        log(
-          "TRACE",
-          `Skipping disabled slot in NPC battle`,
-          {
-            matchId,
-            playerId,
-            slot,
-            disabledTurns: playerSlots[slot].disabledTurns,
-          },
-          slotStartTime
-        );
-        continue;
-      }
+      const results = p1Cards.map((card: any, i: number) => ({
+        slot: i,
+        player1Card: card,
+        player2Card: p2Cards[i],
+        result: card.power > p2Cards[i].power ? "player1" : "player2",
+      }));
 
-      const result = compareCards(playerCards[slot], npcCards[slot]);
-      if (result === "win") {
-        battleResults.push({
-          slot,
-          result,
-          playerCard: playerCards[slot],
-          opponentCard: npcCards[slot],
-          canReplace: true,
-        });
-      } else {
-        playerSlots[slot].disabledTurns = 3;
-        battleResults.push({
-          slot,
-          result,
-          playerCard: playerCards[slot],
-          opponentCard: npcCards[slot],
-          canReplace: false,
-        });
-      }
-      log(
-        "TRACE",
-        `Completed slot battle with NPC card`,
-        { matchId, playerId, slot, result, playerSlot: playerSlots[slot] },
-        slotStartTime
-      );
-    }
-
-    battleResults.forEach(
-      ({ slot, result, playerCard, opponentCard, canReplace }) => {
-        io.to(playerId).emit("battle_result", {
-          matchId,
-          slot,
-          playerCard,
-          opponentCard,
-          result,
-          canReplace,
-        });
-      }
-    );
-    log(
-      "DEBUG",
-      `Emitted all NPC battle_result events to player`,
-      { playerId, matchId, battleCount: battleResults.length },
-      startTime
-    );
-
-    await redisClient.hset(
-      `playerId:${matchId}:${playerId}`,
-      "slots",
-      JSON.stringify(playerSlots)
-    );
-    log(
-      "TRACE",
-      `Updated player slots after NPC battle`,
-      { matchId, playerId, slotCount: playerSlots.length },
-      startTime
-    );
-  } catch (error: any) {
-    log(
-      "ERROR",
-      `Failed to start battle with NPC`,
-      { matchId, playerId, npcId, error: error.message, stack: error.stack },
-      startTime
-    );
-    io.to(matchId.toString()).emit("error", { message: error.message });
-  }
-}
-
-export async function startBattle(
-  matchId: string,
-  io: any,
-  isPvP: boolean = true
-) {
-  const startTime = Date.now();
-  try {
-    log("DEBUG", `Starting battle`, { matchId, isPvP }, startTime);
-    const matchData = await withRetry(
-      () => validateMatchState(matchId, "playing"),
-      3,
-      100
-    );
-
-    const player1Id = matchData.player1;
-    const player2Id = matchData.player2;
-
-    const [player1Data, player2Data] = await Promise.all([
-      withRetry(() => validatePlayerState(player1Id, matchId), 3, 100),
-      withRetry(() => validatePlayerState(player2Id, matchId), 3, 100),
-    ]);
-    log(
-      "TRACE",
-      "Validated player states",
-      { player1Id, player2Id, matchId },
-      startTime
-    );
-
-    const player1Cards = JSON.parse(player1Data.cards);
-    const player2Cards = JSON.parse(player2Data.cards);
-    const player1Slots = JSON.parse(player1Data.slots);
-    const player2Slots = JSON.parse(player2Data.slots);
-
-    if (isPvP) {
-      io.to(matchId.toString()).emit("battle_started", {
-        matchId,
-        opponent: "player",
-      });
-      log(
-        "TRACE",
-        `Emitted battle_started event to both players`,
-        { matchId },
-        startTime
-      );
-
-      const battleResults = [];
-      const pipeline = redisClient.pipeline();
-      for (let slot = 0; slot < 5; slot++) {
-        const slotStartTime = Date.now();
-        if (
-          player1Slots[slot].disabledTurns > 0 ||
-          player2Slots[slot].disabledTurns > 0
-        ) {
-          log(
-            "TRACE",
-            `Skipping disabled slot in PvP battle`,
-            {
-              matchId,
-              slot,
-              player1Disabled: player1Slots[slot].disabledTurns,
-              player2Disabled: player2Slots[slot].disabledTurns,
-            },
-            slotStartTime
-          );
-          continue;
-        }
-
-        const result = compareCards(player1Cards[slot], player2Cards[slot]);
-        if (result === "win") {
-          player2Slots[slot].disabledTurns = 3;
-        } else {
-          player1Slots[slot].disabledTurns = 3;
-        }
-        log(
-          "TRACE",
-          `Completed slot battle in PvP`,
-          {
-            matchId,
-            slot,
-            result,
-            player1Slot: player1Slots[slot],
-            player2Slot: player2Slots[slot],
-          },
-          slotStartTime
-        );
-
-        battleResults.push({
-          slot,
-          result,
-          player1Card: player1Cards[slot],
-          player2Card: player2Cards[slot],
-        });
-      }
-      battleResults.forEach(({ slot, result, player1Card, player2Card }) => {
-        io.to(player1Id).emit("battle_result", {
-          matchId,
-          slot,
-          playerCard: player1Card,
-          opponentCard: player2Card,
-          result,
-          canReplace: false,
-        });
-        io.to(player2Id).emit("battle_result", {
-          matchId,
-          slot,
-          playerCard: player2Card,
-          opponentCard: player1Card,
-          result: result === "win" ? "lose" : "win",
-          canReplace: false,
-        });
-      });
-      log(
-        "DEBUG",
-        `Emitted all PvP battle_result events to both players`,
-        { matchId, battleCount: battleResults.length },
-        startTime
-      );
-
-      pipeline.hset(
-        `playerId:${matchId}:${player1Id}`,
-        "slots",
-        JSON.stringify(player1Slots)
-      );
-      pipeline.hset(
-        `playerId:${matchId}:${player2Id}`,
-        "slots",
-        JSON.stringify(player2Slots)
-      );
-      await pipeline.exec();
-      log(
-        "TRACE",
-        "Updated player slots after PvP battle with pipeline",
-        { matchId, player1Id, player2Id, commandCount: pipeline.length },
-        startTime
-      );
-
-      const result = await withRetry(
-        () =>
-          (redisClient as any).updateMatchState(
-            `match:${matchId}`,
-            "none",
-            "",
-            "0",
-            Date.now().toString()
-          ),
-        3,
-        100
-      );
-
-      const resultObject = JSON.parse(result);
-      if (!resultObject.success) {
-        log(
-          "ERROR",
-          `Failed to update match state`,
-          { matchId, error: resultObject.error, stack: new Error().stack },
-          startTime
-        );
-        throw new Error(resultObject.error);
-      }
-      log(
-        "TRACE",
-        `Match state updated successfully after PvP battle`,
-        { matchId, result: resultObject },
-        startTime
-      );
+      await redisClient.hset(`match:${matchId}`, "phase", "battle");
+      io.to(player1Id).emit("battle_result", { matchId, results });
+      io.to(player2Id).emit("battle_result", { matchId, results: results.map((r: any) => ({ ...r, result: r.result === "player1" ? "player2" : "player1" })) });
+      log("DEBUG", "Battle result sent, waiting for battle_ended", { matchId, round: matchData.round, results: results });
     }
   } catch (error: any) {
-    log(
-      "ERROR",
-      `Failed to start battle`,
-      { matchId, isPvP, error: error.message, stack: error.stack },
-      startTime
-    );
-    io.to(matchId.toString()).emit("error", { message: error.message });
+    log("ERROR", "Error in endChallengePhase", { error: error.message });
+    io.to(matchId).emit("error", { message: error.message });
   }
 }

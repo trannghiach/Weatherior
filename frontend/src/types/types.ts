@@ -29,12 +29,25 @@ export interface BattleResult {
   canReplace: boolean;
 }
 
+// export interface GameState {
+//   matchInfo: MatchInfo | null;
+//   playerState: PlayerState | null;
+//   opponentState: PlayerState | null;
+//   currentRound: number;
+//   timeLeft: number;
+//   battleResults: BattleResult[];
+//   opponentDisconnected: boolean;
+// }
+
 export interface GameState {
   matchInfo: MatchInfo | null;
-  playerState: PlayerState | null;
-  opponentState: PlayerState | null;
+  playerCards: Card[];
+  opponentCards: Card[];
   currentRound: number;
   timeLeft: number;
+  phase: "Arrange" | "Challenge" | "Battle" | "";
   battleResults: BattleResult[];
   opponentDisconnected: boolean;
+  arrangeCount: number;
+  beingChallenged: boolean;
 }

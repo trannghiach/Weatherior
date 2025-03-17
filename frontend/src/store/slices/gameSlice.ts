@@ -1,19 +1,22 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   BattleResult,
+  Card,
   GameState,
   MatchInfo,
-  PlayerState,
 } from "../../types/types";
 
 const initialState: GameState = {
   matchInfo: null,
-  playerState: null,
-  opponentState: null,
+  playerCards: [],
+  opponentCards: [],
   currentRound: 0,
   timeLeft: 0,
+  phase: "",
   battleResults: [],
   opponentDisconnected: false,
+  arrangeCount: 0,
+  beingChallenged: false,
 };
 
 const gameSlice = createSlice({
@@ -23,11 +26,11 @@ const gameSlice = createSlice({
     setMatchInfo: (state, action: PayloadAction<MatchInfo | null>) => {
       state.matchInfo = action.payload;
     },
-    setPlayerState: (state, action: PayloadAction<PlayerState | null>) => {
-      state.playerState = action.payload;
+    setPlayerCards: (state, action: PayloadAction<Card[]>) => {
+      state.playerCards = action.payload;
     },
-    setOpponentState: (state, action: PayloadAction<PlayerState | null>) => {
-      state.opponentState = action.payload;
+    setOpponentCards: (state, action: PayloadAction<Card[]>) => {
+      state.opponentCards = action.payload;
     },
     setCurrentRound: (state, action: PayloadAction<number>) => {
       state.currentRound = action.payload;
@@ -35,16 +38,25 @@ const gameSlice = createSlice({
     setTimeLeft: (state, action: PayloadAction<number>) => {
       state.timeLeft = action.payload;
     },
+    setPhase: (state, action: PayloadAction<"Arrange" | "Challenge" | "">) => {
+      state.phase = action.payload;
+    },
     addBattleResult: (state, action: PayloadAction<BattleResult>) => {
       state.battleResults.push(action.payload);
     },
     setOpponentDisconnected: (state, action: PayloadAction<boolean>) => {
       state.opponentDisconnected = action.payload;
     },
+    setArrangeCount: (state, action: PayloadAction<number>) => {
+      state.arrangeCount = action.payload;
+    },
+    setBeingChallenged: (state, action: PayloadAction<boolean>) => {
+      state.beingChallenged = action.payload;
+    },
     resetGameState: (state) => {
       state.matchInfo = null;
-      state.playerState = null;
-      state.opponentState = null;
+      state.playerCards = [];
+      state.opponentCards = [];
       state.currentRound = 0;
       state.timeLeft = 0;
       state.battleResults = [];
@@ -55,12 +67,15 @@ const gameSlice = createSlice({
 
 export const {
   setMatchInfo,
-  setPlayerState,
-  setOpponentState,
+  setPlayerCards,
+  setOpponentCards,
   setCurrentRound,
   setTimeLeft,
+  setPhase,
   addBattleResult,
   setOpponentDisconnected,
+  setArrangeCount,
+  setBeingChallenged,
   resetGameState,
 } = gameSlice.actions;
 export default gameSlice.reducer;
