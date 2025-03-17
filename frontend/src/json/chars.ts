@@ -1,38 +1,38 @@
 export const chars = [
     {
-        "name": "Beong",
-        "imgSrc": "beong",
+        "name": "beong",
+        "power": 1,
     },
     {
-        "name": "Bingbao",
-        "imgSrc": "bingbao",
+        "name": "bingbao",
+        "power": 2,
     },
     {
-        "name": "Cranna",
-        "imgSrc": "cranna",
+        "name": "cranna",
+        "power": 3,
     },
     {
-        "name": "Flores",
-        "imgSrc": "flores",
+        "name": "flores",
+        "power": 4,
     },
     {
-        "name": "Hinona",
-        "imgSrc": "hinona",
+        "name": "hinona",
+        "power": 5,
     },
     {
-        "name": "Krysthe",
-        "imgSrc": "krysthe",
+        "name": "krysthe",
+        "power": 6,
     },
     {
-        "name": "Luz",
-        "imgSrc": "luz",
+        "name": "luz",
+        "power": 7,
     },
     {
-        "name": "Sandya",
-        "imgSrc": "sandya",
+        "name": "sandya",
+        "power": 8,
     },
     {
-        "name": "Scorphie",
-        "imgSrc": "scorphie",
+        "name": "scorphie",
+        "power": 9,
     },
 ]

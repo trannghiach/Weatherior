@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import redisClient from './redis';
+import { v4 as uuidv4 } from 'uuid';
 
 
 
@@ -17,34 +18,34 @@ const log  = (level: string, message: string, details: any = {}, startTime?: num
 
 //object immutable to simulate, then replace with the one from the database
 const initialCards = Object.freeze([
-    { id: "card1", power: 12 },
-    { id: "card2", power: 2 },
-    { id: "card3", power: 7 },
-    { id: "card4", power: 9 },
-    { id: "card5", power: 1 },
+    { id: uuidv4(), name: "hinano", power: 12 },
+    { id: uuidv4(), name: "bingbao", power: 2 },
+    { id: uuidv4(), name: "beong", power: 7 },
+    { id: uuidv4(), name: "sandya", power: 9 },
+    { id: uuidv4(), name: "flores", power: 1 },
 ]);
 
 const generateNPCs = () => ({
     npc1: Object.freeze([
-        { id: "npc_card1", power: 1 },
-        { id: "npc_card2", power: 22 },
-        { id: "npc_card3", power: 5 },
-        { id: "npc_card4", power: 1 },
-        { id: "npc_card5", power: 1 },
+        { id: "npc_card1", name: "cranna", power: 1 },
+        { id: "npc_card2", name: "cranna", power: 22 },
+        { id: "npc_card3", name: "cranna", power: 5 },
+        { id: "npc_card4", name: "cranna", power: 1 },
+        { id: "npc_card5", name: "cranna", power: 1 },
     ]),
     npc2: Object.freeze([
-        { id: "npc_card6", power: 2 },
-        { id: "npc_card7", power: 2 },
-        { id: "npc_card8", power: 2 },
-        { id: "npc_card9", power: 2 },
-        { id: "npc_card10", power: 2 },
+        { id: "npc_card6", name: "scorphie", power: 2 },
+        { id: "npc_card7", name: "scorphie", power: 2 },
+        { id: "npc_card8", name: "scorphie", power: 2 },
+        { id: "npc_card9", name: "scorphie", power: 2 },
+        { id: "npc_card10", name: "scorphie", power: 2 },
     ]),
     npc3: Object.freeze([
-        { id: "npc_card11", power: 12 },
-        { id: "npc_card12", power: 2 },
-        { id: "npc_card13", power: 7 },
-        { id: "npc_card14", power: 9 },
-        { id: "npc_card15", power: 1 },
+        { id: "npc_card11", name: "krysthe", power: 12 },
+        { id: "npc_card12", name: "krysthe", power: 2 },
+        { id: "npc_card13", name: "krysthe", power: 7 },
+        { id: "npc_card14", name: "krysthe", power: 9 },
+        { id: "npc_card15", name: "krysthe", power: 1 },
     ]),
 });
 

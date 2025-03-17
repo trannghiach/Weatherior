@@ -3,7 +3,7 @@ import { WEB_URL } from "../constants/env";
 import redisClient from "./redis";
 import { v4 as uuidv4 } from "uuid";
 import http from "http";
-import { generateNPCs, initialCards, log, validateMatchState, validatePlayerState, withRetry } from "./init";
+import { generateNPCs, log, validateMatchState, validatePlayerState, withRetry } from "./init";
 import { jobScheduler, registerLuaScripts } from "./scheduler";
 
 
@@ -36,7 +36,7 @@ export default function setUpSocketIO(server: http.Server) {
     const socketStartTime = Date.now();
     //log("INFO", "A player connected", { socketId: socket.id }, socketStartTime);
 
-    socket.on("join_match", async ({ playerId }) => {
+    socket.on("join_match", async ({ playerId, initialCards }) => {
       const eventStartTime = Date.now();
       try {
         playerId = socket.id;
@@ -122,6 +122,18 @@ export default function setUpSocketIO(server: http.Server) {
           await playerPipeline.exec();
           log("TRACE", "Initial cards and slots set for players", { matchId, player1Id: updatedMatchData.player1Id, player2Id: playerId, commandCount: playerPipeline.length }, eventStartTime);
 
+          const player1Data = await withRetry(() => redisClient.hgetall(`player:${matchId}:${updatedMatchData.player1Id}`), 3, 100);
+
+          const player1State = {
+            cards: JSON.parse(player1Data.cards),
+            slots: JSON.parse(player1Data.slots),
+          }
+
+          const player2State = {
+            cards: initialCards,
+            slots: initialSlots,
+          }
+
           const matchInfo = {
             matchId,
             player1Id: updatedMatchData.player1Id,
@@ -129,7 +141,9 @@ export default function setUpSocketIO(server: http.Server) {
             npcs,
           };
 
-          io.to(matchId.toString()).emit("match_started", matchInfo);
+          //io.to(matchId.toString()).emit("match_started", matchInfo);
+          io.to(updatedMatchData.player1Id).emit("match_started", { matchInfo, playerState: player1State, opponentState: player2State });
+          io.to(playerId).emit("match_started", { matchInfo, playerState: player2State, opponentState: player1State });
           log("INFOR", "Match started", { matchId, player1Id: updatedMatchData.player1Id, player2Id: playerId }, eventStartTime);
 
           await withRetry(() => import("./gameLogic").then(({ startRound}) => startRound(matchId, io)), 3, 100);

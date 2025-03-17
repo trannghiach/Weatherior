@@ -2,15 +2,18 @@ import { useState } from "react";
 
 type CardProps = {
     name: string;
-    imgUrl: string;
+    power: number;
 };
 
+const getUpperCaseName = (name: string) => {
+    return name[0].toUpperCase() + name.slice(1);
+}
 
-const Card: React.FC<CardProps> = ({ name, imgUrl }) => {
+const Card: React.FC<CardProps> = ({ name, power }) => {
   const [hover, setHover] = useState(false);
 
-    const bg = `https://res.cloudinary.com/dksvd7ylw/image/upload/f_auto,q_auto/${imgUrl}`;
-    const img = `https://res.cloudinary.com/dksvd7ylw/image/upload/f_auto,q_auto/${imgUrl}_rmbg`;
+    const bg = `https://res.cloudinary.com/dksvd7ylw/image/upload/f_auto,q_auto/${name}`;
+    const img = `https://res.cloudinary.com/dksvd7ylw/image/upload/f_auto,q_auto/${name}_rmbg`;
   return (
     <>
       <div
@@ -41,7 +44,7 @@ const Card: React.FC<CardProps> = ({ name, imgUrl }) => {
             fontFamily: "EnchantedLand",
           }}
         >
-          {name}
+          {getUpperCaseName(name)} - Power: {power}
         </div>
         <img
           src={img}
