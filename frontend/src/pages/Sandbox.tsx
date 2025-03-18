@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { useDispatch, useSelector } from "react-redux"
 import { io, Socket } from "socket.io-client";
 import { setConnected, setSocket } from "../store/slices/socketSlice";
-import { addBattleResult, setArrangeCount, setBeingChallenged, setCurrentRound, setMatchInfo, setOpponentCards, setOpponentDisconnected, setPhase, setPlayerCards, setTimeLeft } from "../store/slices/gameSlice";
+import { setArrangeCount, setBattleResults, setBeingChallenged, setCurrentRound, setMatchInfo, setOpponentCards, setOpponentDisconnected, setPhase, setPlayerCards, setTimeLeft } from "../store/slices/gameSlice";
 import Match from "../components/Match";
 import { v4 as uuidv4 } from "uuid";
 
@@ -62,6 +62,10 @@ const Sandbox: React.FC = () => {
       dispatch(setPhase(data.phase));
     });
 
+    newSocket.on("battle_result", (data: any) => {
+      dispatch(setBattleResults(data.results));
+    });
+
     // newSocket.on("round_ended", (data: { matchId: string, round: number, playerState: Record<string, any> }) => {
     //   const playerId = newSocket.id;
     //   if(!playerId) {
@@ -70,10 +74,6 @@ const Sandbox: React.FC = () => {
     //   }
     //   dispatch(setPlayerState(data.playerState[playerId]));
     // });
-
-    newSocket.on("battle_result", (data: any) => {
-      dispatch(addBattleResult(data));
-    });
 
     newSocket.on("opponent_disconnected", () => {
       dispatch(setOpponentDisconnected(true));

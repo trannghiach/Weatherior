@@ -5,9 +5,9 @@ import { RootState } from "../store";
 type CardProps = {
   name: string;
   power: number;
-  id: number;
-  handleChosen: (id: number) => void;
-  count: number;
+  id?: number;
+  handleChosen?: (id: number) => void;
+  count?: number;
 };
 
 const getUpperCaseName = (name: string) => {
@@ -29,7 +29,7 @@ const PlayerCard: React.FC<CardProps> = ({ name, power, id, handleChosen, count 
   const handleClick = (id: number) => {
     if (arrangeCount === 0 || phase !== "Arrange") return;
     setChosen(!chosen);
-    handleChosen(id);
+    if (handleChosen) handleChosen(id);
     setHover(false);
   }
 
@@ -42,7 +42,7 @@ const PlayerCard: React.FC<CardProps> = ({ name, power, id, handleChosen, count 
         style={{
           perspective: "1000px",
         }}
-        onClick={() => handleClick(id)}
+        onClick={typeof id !== "undefined" ? () => handleClick(id) : undefined}
       >
         {!chosen ? (
           <>

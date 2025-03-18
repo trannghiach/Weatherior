@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=weatherior
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - weatherior
+
+  redis: 
+    image: redis:latest
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - weatherior
+      
+  backend:
+    build:
+      context: ./backend
+      target: development
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - weatherior
+    depends_on:
+      - postgres
+      - redis
+    
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+      args:
+        VITE_API_URL: https://api.weatherior.localhost
+    restart: unless-stopped
+    env_file: ./frontend/.env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - weatherior
+    command: npm run dev -- --host
+    depends_on:
+      - backend
+  
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - weatherior
+    depends_on:
+      - frontend
+      - backend
+
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_config:
+  caddy_data:
+
+
+networks:
+  weatherior:
+    driver: bridge

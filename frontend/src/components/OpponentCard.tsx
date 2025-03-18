@@ -23,6 +23,7 @@ const OpponentCard: React.FC<CardProps> = ({ name, power }) => {
             backgroundPosition: "center",
           }}
         ></div>
+        <p className="opacity-0 text-xs">{power}</p>
       </div>
     </>
   );

@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface CustomSocket {
+export interface CustomSocket {
     connected: boolean;
     id?: string;
     emit: (event: string, data: any) => void;

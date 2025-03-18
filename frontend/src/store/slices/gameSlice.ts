@@ -44,6 +44,9 @@ const gameSlice = createSlice({
     addBattleResult: (state, action: PayloadAction<BattleResult>) => {
       state.battleResults.push(action.payload);
     },
+    setBattleResults: (state, action: PayloadAction<BattleResult[]>) => {
+      state.battleResults = action.payload;
+    },
     setOpponentDisconnected: (state, action: PayloadAction<boolean>) => {
       state.opponentDisconnected = action.payload;
     },
@@ -73,6 +76,7 @@ export const {
   setTimeLeft,
   setPhase,
   addBattleResult,
+  setBattleResults,
   setOpponentDisconnected,
   setArrangeCount,
   setBeingChallenged,

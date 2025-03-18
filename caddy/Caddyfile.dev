@@ -1,0 +1,11 @@
+{
+    local_certs
+}
+
+weatherior.localhost {
+    reverse_proxy frontend:5173
+}
+
+api.weatherior.localhost {
+    reverse_proxy backend:1205
+}

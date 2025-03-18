@@ -61,12 +61,11 @@ export async function endChallengePhase(matchId: string, io: any) {
         slot: i,
         player1Card: card,
         player2Card: p2Cards[i],
-        result: card.power > p2Cards[i].power ? "player1" : "player2",
+        winner: card.power > p2Cards[i].power ? player1Id : player2Id,
       }));
 
       await redisClient.hset(`match:${matchId}`, "phase", "battle");
-      io.to(player1Id).emit("battle_result", { matchId, results });
-      io.to(player2Id).emit("battle_result", { matchId, results: results.map((r: any) => ({ ...r, result: r.result === "player1" ? "player2" : "player1" })) });
+      io.to(matchId.toString()).emit("battle_result", { matchId, results });
       log("DEBUG", "Battle result sent, waiting for battle_ended", { matchId, round: matchData.round, results: results });
     }
   } catch (error: any) {
