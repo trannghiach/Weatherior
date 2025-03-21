@@ -52,6 +52,7 @@ const Match = () => {
       {phase === "Battle" && (
         <BattleDisplay
           socket={socket}
+          dispatch={dispatch}
           playerCards={playerCards}
           opponentCards={opponentCards}
         />

@@ -2,6 +2,7 @@ export interface Card {
   id: string;
   name: string;
   power: number;
+  disabledTurns: number;
 }
 
 export interface Slot {
@@ -23,10 +24,8 @@ export interface MatchInfo {
 
 export interface BattleResult {
   slot: number;
-  playerCard: Card;
-  opponentCard: Card;
-  result: "win" | "lose";
-  canReplace: boolean;
+  winner: string;
+  canReplace?: boolean;
 }
 
 // export interface GameState {
@@ -43,6 +42,8 @@ export interface GameState {
   matchInfo: MatchInfo | null;
   playerCards: Card[];
   opponentCards: Card[];
+  playerHealth: number;
+  opponentHealth: number;
   currentRound: number;
   timeLeft: number;
   phase: "Arrange" | "Challenge" | "Battle" | "";
@@ -50,4 +51,6 @@ export interface GameState {
   opponentDisconnected: boolean;
   arrangeCount: number;
   beingChallenged: boolean;
+  refuseCount: number;
+  winnerId?: string;
 }

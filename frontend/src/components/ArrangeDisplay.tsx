@@ -4,7 +4,7 @@ import { CustomSocket } from "../store/slices/socketSlice";
 import { Card } from "../types/types";
 import PlayerCard from "./PlayerCard";
 import { setArrangeCount, setPlayerCards } from "../store/slices/gameSlice";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ArrangeDisplayProps = {
   socket: CustomSocket | null;
@@ -21,21 +21,28 @@ const ArrangeDisplay: React.FC<ArrangeDisplayProps> = ({
     (state: RootState) => state.game
   );
 
+  //console.log("cards:", playerCards);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
 
-  if (selectedCards.length === 2) {
-    dispatch(setArrangeCount(arrangeCount - 1));
-    const newPlayerCards = [...playerCards];
-    const temp = newPlayerCards[selectedCards[0]];
-    newPlayerCards[selectedCards[0]] = newPlayerCards[selectedCards[1]];
-    newPlayerCards[selectedCards[1]] = temp;
-    socket?.emit("arrange_cards", {
-      matchId: matchInfo?.matchId,
-      cards: newPlayerCards,
-    });
-    dispatch(setPlayerCards(newPlayerCards));
-    setSelectedCards([]);
-  }
+  useEffect(() => {
+    if (selectedCards.length === 2) {
+      dispatch(setArrangeCount(arrangeCount - 1));
+
+      const newPlayerCards = [...playerCards];
+      const temp = newPlayerCards[selectedCards[0]];
+      newPlayerCards[selectedCards[0]] = newPlayerCards[selectedCards[1]];
+      newPlayerCards[selectedCards[1]] = temp;
+
+      socket?.emit("arrange_cards", {
+        matchId: matchInfo?.matchId,
+        cards: newPlayerCards,
+      });
+
+      dispatch(setPlayerCards(newPlayerCards));
+
+      setSelectedCards([]);
+    }
+  }, [selectedCards, dispatch, socket, matchInfo, playerCards, arrangeCount]);
 
   const handleClick = (id: number) => {
     if (arrangeCount === 0) return;
@@ -52,18 +59,19 @@ const ArrangeDisplay: React.FC<ArrangeDisplayProps> = ({
           className="text-3xl font-bold text-amber-700"
           style={{ fontFamily: "enchantedLand" }}
         >
-          Arrange your cards ({arrangeCount} left)
+          Arrange your cards ({arrangeCount} lefts)
         </p>
         <div className="flex flex-wrap gap-2 justify-center items-center">
           {playerCards.map((card, index) => (
-              <PlayerCard
-                key={index}
-                name={card.name}
-                power={card.power}
-                id={index}
-                handleChosen={handleClick}
-                count={selectedCards.length}
-              />
+            <PlayerCard
+              key={index}
+              name={card.name}
+              power={card.power}
+              id={index}
+              handleChosen={handleClick}
+              count={selectedCards.length}
+              disabled={card.disabledTurns > 0}
+            />
           ))}
         </div>
       </div>

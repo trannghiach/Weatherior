@@ -237,7 +237,43 @@ export default async function setUpSocketIO(server: http.Server) {
           "playing"
         );
         if (matchData.phase !== "battle")
-          throw new Error("Not in battle phase");
+          throw new Error("Not in battle phase: " + matchData.phase);
+
+        //minus 1 disabledTurns for each player card if not 0
+        const [player1Cards, player2Cards] = await Promise.all([
+          redisClient.hget(`player:${matchId}:${matchData.player1Id}`, "cards"),
+          redisClient.hget(`player:${matchId}:${matchData.player2Id}`, "cards"),
+        ]);
+
+        if (!player1Cards || !player2Cards)
+          throw new Error("Player cards not found");
+
+        const p1Cards = JSON.parse(player1Cards);
+        const p2Cards = JSON.parse(player2Cards);
+
+        p1Cards.forEach((card: any) => {
+          if (card.disabledTurns > 0) card.disabledTurns--;
+        });
+
+        p2Cards.forEach((card: any) => {
+          if (card.disabledTurns > 0) card.disabledTurns--;
+        });
+
+        const p2Wins = p1Cards.every((card: any) => card.disabledTurns > 0);
+        const p1Wins = p2Cards.every((card: any) => card.disabledTurns > 0);
+
+        if (p2Wins || p1Wins) {
+          await withRetry(() =>
+            import("./gameLogic").then(({ endMatch }) =>
+              endMatch(
+                matchId,
+                io,
+                p1Wins ? matchData.player1Id : matchData.player2Id
+              )
+            )
+          );
+          return;
+        }
 
         const newRound = (parseInt(matchData.round) + 1).toString();
         await redisClient.hmset(
@@ -251,6 +287,29 @@ export default async function setUpSocketIO(server: http.Server) {
           "challengeResponse",
           ""
         );
+
+        await Promise.all([
+          redisClient.hset(
+            `player:${matchId}:${matchData.player1Id}`,
+            "cards",
+            JSON.stringify(p1Cards)
+          ),
+          redisClient.hset(
+            `player:${matchId}:${matchData.player2Id}`,
+            "cards",
+            JSON.stringify(p2Cards)
+          ),
+        ]);
+
+        io.to(matchId).emit("round_ended", {
+          matchId,
+          player1Id: matchData.player1Id,
+          player2Id: matchData.player2Id,
+          round: matchData.round,
+          player1Cards: p1Cards,
+          player2Cards: p2Cards,
+        });
+
         log("DEBUG", "Battle ended, starting new round", { matchId, newRound });
         await withRetry(() =>
           import("./gameLogic").then(({ startArrangePhase }) =>
@@ -285,7 +344,7 @@ export default async function setUpSocketIO(server: http.Server) {
             if (waitingMatchId === matchId && matchData.status === "waiting") {
               pipeline.del("waiting_match");
             }
-            
+
             await pipeline.exec();
             io.to(matchId).emit("opponent_disconnected", { matchId });
             log("INFO", "Match cleaned up due to disconnect", {

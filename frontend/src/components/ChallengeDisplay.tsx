@@ -60,7 +60,12 @@ const ChallengeDisplay: React.FC<ChallengeDisplayProps> = ({
         </p>
         <div className="flex flex-wrap gap-2 justify-center items-center">
           {playerCards.map((card) => (
-              <PlayerCard key={card.id} name={card.name} power={card.power} />
+            <PlayerCard
+              key={card.id}
+              name={card.name}
+              power={card.power}
+              disabled={card.disabledTurns > 0}
+            />
           ))}
         </div>
       </div>

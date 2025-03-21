@@ -3,22 +3,29 @@ import { RootState } from "../store";
 import { useDispatch, useSelector } from "react-redux"
 import { io, Socket } from "socket.io-client";
 import { setConnected, setSocket } from "../store/slices/socketSlice";
-import { setArrangeCount, setBattleResults, setBeingChallenged, setCurrentRound, setMatchInfo, setOpponentCards, setOpponentDisconnected, setPhase, setPlayerCards, setTimeLeft } from "../store/slices/gameSlice";
+import { resetGameState, setArrangeCount, setBattleResults, setBeingChallenged, setCurrentRound, setMatchInfo, setOpponentCards, setOpponentDisconnected, setPhase, setPlayerCards, setTimeLeft, setWinner } from "../store/slices/gameSlice";
 import Match from "../components/Match";
 import { v4 as uuidv4 } from "uuid";
 
+const random1or0 = () => Math.floor(Math.random() * 2);
+const power = random1or0();
+
 const initialCards = [
-  { id: uuidv4(), name: "hinona", power: 12 },
-  { id: uuidv4(), name: "bingbao", power: 2 },
-  { id: uuidv4(), name: "beong", power: 7 },
-  { id: uuidv4(), name: "sandya", power: 9 },
-  { id: uuidv4(), name: "flores", power: 1 },
+  { id: uuidv4(), name: "hinona", power, disabledTurns: 0 },
+  { id: uuidv4(), name: "bingbao", power, disabledTurns: 0 },
+  { id: uuidv4(), name: "beong", power, disabledTurns: 0 },
+  { id: uuidv4(), name: "sandya", power, disabledTurns: 0 },
+  { id: uuidv4(), name: "flores", power, disabledTurns: 0 },
 ]
 
 const Sandbox: React.FC = () => {
   const dispatch = useDispatch();
   const { isConnected } = useSelector((state: RootState) => state.socket);
-  const { matchInfo } = useSelector((state: RootState) => state.game);
+  const { matchInfo, playerCards } = useSelector((state: RootState) => state.game);
+
+  useEffect(() => {
+    console.log("Player cards: ", playerCards);
+  }, [playerCards]);
 
   useEffect(() => {
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, { transports: ["websocket"] });
@@ -31,6 +38,7 @@ const Sandbox: React.FC = () => {
     });
 
     newSocket.on("match_started", (data: any) => {
+      dispatch(resetGameState());
       dispatch(setMatchInfo(data.matchInfo));
       dispatch(setPlayerCards(data.playerCards));
       dispatch(setOpponentCards(data.opponentCards));
@@ -48,6 +56,7 @@ const Sandbox: React.FC = () => {
       dispatch(setCurrentRound(data.round));
       dispatch(setTimeLeft(data.timeLeft));
       dispatch(setPhase(data.phase));
+      dispatch(setBeingChallenged(false));
     });
 
     newSocket.on("opponent_arranged", (data: any) => {
@@ -66,14 +75,19 @@ const Sandbox: React.FC = () => {
       dispatch(setBattleResults(data.results));
     });
 
-    // newSocket.on("round_ended", (data: { matchId: string, round: number, playerState: Record<string, any> }) => {
-    //   const playerId = newSocket.id;
-    //   if(!playerId) {
-    //     console.log("Player ID not found");
-    //     return;
-    //   }
-    //   dispatch(setPlayerState(data.playerState[playerId]));
-    // });
+    newSocket.on("round_ended", (data: any) => {
+      if(data.player1Id === newSocket.id) {
+        dispatch(setPlayerCards(data.player1Cards));
+        dispatch(setOpponentCards(data.player2Cards));
+      } else {
+        dispatch(setPlayerCards(data.player2Cards));
+        dispatch(setOpponentCards(data.player1Cards));
+      }
+    });
+    
+    newSocket.on("match_ended", (data: any) => {
+      dispatch(setWinner(data.winnerId));
+    });
 
     newSocket.on("opponent_disconnected", () => {
       dispatch(setOpponentDisconnected(true));

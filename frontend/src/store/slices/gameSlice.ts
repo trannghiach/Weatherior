@@ -10,6 +10,8 @@ const initialState: GameState = {
   matchInfo: null,
   playerCards: [],
   opponentCards: [],
+  playerHealth: 5,
+  opponentHealth: 5,
   currentRound: 0,
   timeLeft: 0,
   phase: "",
@@ -17,6 +19,7 @@ const initialState: GameState = {
   opponentDisconnected: false,
   arrangeCount: 0,
   beingChallenged: false,
+  refuseCount: 2,
 };
 
 const gameSlice = createSlice({
@@ -56,6 +59,12 @@ const gameSlice = createSlice({
     setBeingChallenged: (state, action: PayloadAction<boolean>) => {
       state.beingChallenged = action.payload;
     },
+    setRefuseCount: (state, action: PayloadAction<number>) => {
+      state.refuseCount = action.payload;
+    },
+    setWinner: (state, action: PayloadAction<string>) => {
+      state.winnerId = action.payload;
+    },
     resetGameState: (state) => {
       state.matchInfo = null;
       state.playerCards = [];
@@ -80,6 +89,8 @@ export const {
   setOpponentDisconnected,
   setArrangeCount,
   setBeingChallenged,
+  setRefuseCount,
+  setWinner,
   resetGameState,
 } = gameSlice.actions;
 export default gameSlice.reducer;
